@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poll Data Showcase</title>
+    <style>
+        .polls {
+            max-width: 600px;
+            margin: auto;
+            padding: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .poll {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .poll h3 {
+            margin: 0 0 0.5rem;
+        }
+
+        .poll ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .poll ul li {
+            padding: 0.25rem 0;
+        }
+
+        .poll button {
+            margin-top: 0.5rem;
+            margin-right: 0.5rem;
+        }
+
+        .results {
+            margin-top: 1rem;
+        }
+
+        .progress {
+            width: 100%;
+            height: 30px;
+            background-color: #f3f3f3;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+
+        .bg-success {
+            background-color: #4caf50;
+        }
+
+        .bg-info {
+            background-color: #17a2b8;
+        }
+
+        .bg-warning {
+            background-color: #ffc107;
+        }
+
+        .bg-danger {
+            background-color: #dc3545;
+        }
+
+        .text-dark {
+            color: black;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="polls" id="polls">
+        <h2>Poll Data Showcase</h2>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var pollsContainer = document.getElementById('polls');
+            var polls = JSON.parse(localStorage.getItem('Polls')) || [];
+
+            function renderPolls() {
+                pollsContainer.innerHTML = '<h2>Poll Data Showcase</h2>';
+                if (polls.length > 0) {
+                    polls.forEach((poll, index) => {
+                        var pollDiv = document.createElement('div');
+                        pollDiv.className = 'poll';
+                        var title = document.createElement('h3');
+                        title.textContent = poll.title;
+                        pollDiv.appendChild(title);
+
+                        var optionsList = document.createElement('ul');
+                        poll.options.forEach((option, optionIndex) => {
+                            var optionItem = document.createElement('li');
+                            var optionLabel = document.createElement('label');
+                            var optionInput = document.createElement('input');
+                            optionInput.type = 'radio';
+                            optionInput.name = `poll-${index}`;
+                            optionInput.value = optionIndex;
+                            optionLabel.textContent = option;
+                            optionLabel.prepend(optionInput);
+                            optionItem.appendChild(optionLabel);
+                            optionsList.appendChild(optionItem);
+                        });
+                        pollDiv.appendChild(optionsList);
+
+                        var voteButton = document.createElement('button');
+                        voteButton.textContent = 'Vote';
+                        voteButton.addEventListener('click', function () {
+                            var username = prompt("Enter your username:");
+                            if (!username) {
+                                alert('Username is required to vote.');
+                                return;
+                            }
+
+                            poll.voters = poll.voters || [];
+                            if (poll.voters.includes(username)) {
+                                alert('You have already voted in this poll.');
+                                window.location.assign("loginForm.html");
+                                return;
+                            }
+
+                            var selectedOption = document.querySelector(`input[name="poll-${index}"]:checked`);
+                            if (selectedOption) {
+                                var selectedValue = selectedOption.value;
+                                if (!poll.votes) {
+                                    poll.votes = Array(poll.options.length).fill(0);
+                                }
+                                poll.votes[selectedValue]++;
+                                poll.voters.push(username);
+                                localStorage.setItem('Polls', JSON.stringify(polls));
+                                updateResults(poll, pollDiv, index);
+                               
+                            } else {
+                                alert('Please select an option before voting.');
+                            }
+                        });
+                        pollDiv.appendChild(voteButton);
+
+                        var clearButton = document.createElement('button');
+                        clearButton.textContent = 'Clear';
+                        clearButton.addEventListener('click', function () {
+                            if (poll.votes) {
+                                poll.votes.fill(0);
+                                poll.voters = []; // Clear the list of voters when resetting the poll
+                                localStorage.setItem('Polls', JSON.stringify(polls));
+                                updateResults(poll, pollDiv, index);
+                            }
+                        });
+                        pollDiv.appendChild(clearButton);
+
+                        var deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Delete';
+                        deleteButton.addEventListener('click', function () {
+                            if (confirm("Are you sure you want to delete this poll?")) {
+                                polls.splice(index, 1);
+                                localStorage.setItem('Polls', JSON.stringify(polls));
+                                renderPolls(); // Re-render the polls after deletion
+                            }
+                        });
+                        pollDiv.appendChild(deleteButton);
+
+                        var resultsDiv = document.createElement('div');
+                        resultsDiv.className = 'results';
+                        pollDiv.appendChild(resultsDiv);
+                        pollsContainer.appendChild(pollDiv);
+
+                        updateResults(poll, pollDiv, index);
+                    });
+                } else {
+                    var noPolls = document.createElement('p');
+                    noPolls.textContent = "No polls available.";
+                    pollsContainer.appendChild(noPolls);
+                }
+            }
+
+            function updateResults(poll, pollDiv, index) {
+                var resultsDiv = pollDiv.querySelector('.results');
+                resultsDiv.innerHTML = '';
+
+                var totalVotes = poll.votes ? poll.votes.reduce((a, b) => a + b, 0) : 0;
+
+                if (totalVotes > 0) {
+                    poll.options.forEach((option, index) => {
+                        var percentage = poll.votes ? ((poll.votes[index] / totalVotes) * 100).toFixed(2) : 0;
+                        var resultItem = document.createElement('div');
+                        resultItem.textContent = `${option}: ${percentage}% (${poll.votes[index]} votes)`;
+                        resultsDiv.appendChild(resultItem);
+
+                        var progressBarDiv = document.createElement('div');
+                        progressBarDiv.className = 'progress';
+                        var progressBar = document.createElement('div');
+                        progressBar.className = 'progress-bar';
+
+                        if (percentage >= 75) {
+                            progressBar.classList.add('bg-danger');
+                        } else if (percentage >= 50) {
+                            progressBar.classList.add('bg-warning');
+                        } else if (percentage >= 25) {
+                            progressBar.classList.add('bg-info');
+                        } else {
+                            progressBar.classList.add('bg-success');
+                        }
+
+                        progressBar.style.width = `${percentage}%`;
+                        progressBar.textContent = `${percentage}%`;
+                        progressBarDiv.appendChild(progressBar);
+                        resultsDiv.appendChild(progressBarDiv);
+                    });
+                }
+            }
+
+            renderPolls();
+        });
+    </script>
+</body>
+
+</html>

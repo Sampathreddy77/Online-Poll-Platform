@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #007BFF;
+        }
+
+        .container {
+            background: rgba(91, 161, 205, 0.9);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        fieldset {
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        legend {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin: 0.5rem 0 0.2rem;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: #007BFF;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+        input[type="submit"] {
+            background: linear-gradient(to right, #333, #6da3dd);
+            color: #fff;
+            padding: 0.7rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background: linear-gradient(to right, #6da3dd, #3080c1);
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .login-link a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <fieldset>
+            <legend>Sign Up</legend>
+            <form id="signup-form">
+                <label for="user">Username:</label>
+                <input type="text" id="user" name="user" required>
+                
+                <label for="mail">Enter Your Email:</label>
+                <input type="email" id="mail" name="mail" required>
+                
+                <label for="pass">Password:</label>
+                <input type="password" id="pass" name="pass" required>
+                
+                <label for="cpass">Confirm Your Password:</label>
+                <input type="password" id="cpass" name="cpass" required>
+                
+                <label for="num">Enter Your Phone Number:</label>
+                <input type="tel" id="num" name="num" required>
+                
+                <input type="submit" value="Sign Up">
+                <div class="login-link">
+                    <label>Already a user?</label>
+                    <a href="./loginForm.html">Login</a>
+                </div>
+            </form>
+        </fieldset>
+    </div>
+    <script>
+        document.getElementById("signup-form").addEventListener("submit", function(event) {
+            event.preventDefault();  // Prevent default form submission
+
+            var user = document.getElementById("user");
+            var mail = document.getElementById("mail");
+            var pass = document.getElementById("pass");
+            var cpass = document.getElementById("cpass");
+            var num = document.getElementById("num");
+
+            if (!/^[\w]+$/.test(user.value)) {
+                alert("Check your username. Only alphanumeric characters are allowed.");
+                user.focus();
+                return;
+            }
+
+            if (!/@gmail\.com$/.test(mail.value)) {
+                alert("Please check your email address.");
+                mail.focus();
+                return;
+            }
+
+            if (!/^[A-Z]/.test(pass.value) || !/[0-9]/.test(pass.value) || !/[@#$%&*]/.test(pass.value)) {
+                alert("Please add a capital letter, number, and special character for a strong password.");
+                pass.focus();
+                return;
+            }
+
+            if (pass.value !== cpass.value) {
+                alert("Passwords don't match.");
+                cpass.focus();
+                return;
+            }
+
+            if (!/^[9876]\d{9}$/.test(num.value)) {
+                alert("Check your mobile number.");
+                num.focus();
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('users')) || [];
+            let newUser = { user: user.value, mail: mail.value, pass: pass.value, num: num.value };
+
+            for (let i = 0; i < users.length; i++) {
+                if (users[i].user === user.value || users[i].mail === mail.value) {
+                    alert("User already exists. Please log in.");
+                    window.location.assign("loginForm.html");
+                    return;
+                }
+            }
+
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+
+            const options = {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ Username: user.value, Email: mail.value, Password: pass.value, PhoneNumber: num.value })
+            };
+
+            fetch("http://localhost:3000/", options)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Success:", data);
+                    alert("Registration Successful. Please log in.");
+                    window.location.assign("loginForm.html");
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("An error occurred during registration. Please try again.");
+                });
+        });
+    </script>
+</body>
+</html>
